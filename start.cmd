@@ -1,2 +1,2 @@
-..\php\php.exe mine.php
+..\..\php\php.exe mine.php
 pause;

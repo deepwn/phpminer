@@ -66,14 +66,14 @@ final class o_u64 {
 
         //var lowest, lowMid, highMid, highest; //four parts of the whole 64 bit number..
         //need to add the respective parts from each number and the carry if on is present..
-        $lowest = (($this_l & 0XFFFF) + ($o_l & 0XFFFF));
-        $lowMid = (SHR($this_l, 16) + SHR($o_l, 16) + SHR($lowest, 16));
-        $highMid = ($this_h & 0XFFFF) + ($o_h & 0XFFFF) + SHR($lowMid, 16);
-        $highest = SHR($this_h, 16) + SHR($o_h, 16) + SHR($highMid, 16);
+        $lowest = (($this_l & 0XFFFF) + ($o_l & 0XFFFF))& 0xffffffff;
+        $lowMid = (SHR($this_l, 16) + SHR($o_l, 16) + SHR($lowest, 16)) & 0xffffffff;
+        $highMid = (($this_h & 0XFFFF) + ($o_h & 0XFFFF) + SHR($lowMid, 16)) & 0xffffffff;
+        $highest = (SHR($this_h, 16) + SHR($o_h, 16) + SHR($highMid, 16)) & 0xffffffff;
 
         //now set the hgih and the low accordingly..
-        $c->lo = ($lowMid << 16) | ($lowest & 0XFFFF);
-        $c->hi = ($highest << 16) | ($highMid & 0XFFFF);
+        $c->lo = (($lowMid << 16) | ($lowest & 0XFFFF))& 0xffffffff;
+        $c->hi = ((($highest << 16) | ($highMid & 0XFFFF))) & 0xffffffff;
 
         return $c; //for chaining..
     }
@@ -129,14 +129,14 @@ final class o_u64 {
         // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
         // We can skip products that would overflow.
 
-        $a48 = $this->hi >> 16;
+        $a48 = $this->hi >> 16 & 0xFFFF;
         $a32 = $this->hi & 0xFFFF;
-        $a16 = $this->lo >> 16;
+        $a16 = $this->lo >> 16 & 0xFFFF;
         $a00 = $this->lo & 0xFFFF;
 
-        $b48 = $multiplier->hi >> 16;
+        $b48 = $multiplier->hi >> 16 & 0xFFFF;
         $b32 = $multiplier->hi & 0xFFFF;
-        $b16 = $multiplier->lo >> 16;
+        $b16 = $multiplier->lo >> 16 & 0xFFFF;
         $b00 = $multiplier->lo & 0xFFFF;
 
         $c48 = 0;
@@ -147,24 +147,32 @@ final class o_u64 {
         $c00 += $a00 * $b00;
         $c16 += $c00 >> 16;
         $c00 &= 0xFFFF;
+		
         $c16 += $a16 * $b00;
         $c32 += $c16 >> 16;
         $c16 &= 0xFFFF;
+		
         $c16 += $a00 * $b16;
         $c32 += $c16 >> 16;
         $c16 &= 0xFFFF;
+		
         $c32 += $a32 * $b00;
         $c48 += $c32 >> 16;
         $c32 &= 0xFFFF;
+		
         $c32 += $a16 * $b16;
         $c48 += $c32 >> 16;
         $c32 &= 0xFFFF;
+		
         $c32 += $a00 * $b32;
         $c48 += $c32 >> 16;
         $c32 &= 0xFFFF;
+		
         $c48 += $a48 * $b00 + $a32 * $b16 + $a16 * $b32 + $a00 * $b48;
         $c48 &= 0xFFFF;
-        return new o_u64(($c48 << 16) | $c32, ($c16 << 16) | $c00);
+
+
+        return new o_u64((($c48 << 16) | $c32)& 0xffffffff, (($c16 << 16) | $c00 )& 0xffffffff);
     }
 
     function shiftLeft($bits) {
@@ -180,8 +188,8 @@ final class o_u64 {
             $c->hi = $this_l << ($bits - 32);
         } else {
             $toMoveUp = SHR($this_l, 32 - $bits);
-            $c->lo = $this_l << $bits;
-            $c->hi = ($this_h << $bits) | $toMoveUp;
+            $c->lo = ($this_l << $bits)& 0xffffffff;
+            $c->hi =(($this_h << $bits) | $toMoveUp)& 0xffffffff;
         }
         return $c; //for chaining..
     }
@@ -251,8 +259,8 @@ final class o_u64 {
             $bitsOff32 = 32 - $bits;
             $toMoveDown = $this_h << $bitsOff32 >> $bitsOff32;
 
-            $c->hi = $this_h >> $bits;
-            $c->lo = $this_l >> $bits | ($toMoveDown << $bitsOff32);
+            $c->hi = $this_h >> $bits & 0xffffffff;
+            $c->lo = ($this_l >> $bits | ($toMoveDown << $bitsOff32) ) & 0xffffffff;
         }
         return $c; //for chaining..
     }
@@ -271,9 +279,10 @@ final class o_u64 {
             $c->lo = $this->hi;
             $c->hi = $this->lo;
         } else {
-            $c->lo = ($this->lo << $bits) | ($this->hi >> (32 - $bits));
-            $c->hi = ($this->hi << $bits) | ($this->lo >> (32 - $bits));
+            $c->lo = (($this->lo << $bits) | ($this->hi >> (32 - $bits))) & 0xffffffff;
+            $c->hi = (($this->hi << $bits) | ($this->lo >> (32 - $bits))) & 0xffffffff;
         }
+	
         return $c; //for chaining..
     }
 
@@ -311,19 +320,31 @@ final class o_u64 {
             $c->lo = $this->hi;
             $c->hi = $this->lo;
         } else {
-            $c->lo = ($this->hi << (32 - $bits)) | ($this->lo >> $bits);
-            $c->hi = ($this->lo << (32 - $bits)) | ($this->hi >> $bits);
+            $c->lo = (($this->hi << (32 - $bits)) | ($this->lo >> $bits)) & 0xffffffff;
+            $c->hi = (($this->lo << (32 - $bits)) | ($this->hi >> $bits)) & 0xffffffff;
         }
+
+		
         return $c; //for chaining..
     }
 
     function setFlip() {
-        throw new Exception('No plz');
+  
         #$newHigh;
         $newHigh = $this->lo;
         $this->lo = $this->hi;
         $this->hi = $newHigh;
         return $this;
+    }
+  function Flip() {
+  
+        #$newHigh;
+		$new=clone $this;
+		
+ 
+        $new->lo = $this->hi;
+        $new->hi = $this->lo;
+        return $new;
     }
 
 //Rotates the bits of this word round to the right (max 32)..
@@ -345,6 +366,8 @@ final class o_u64 {
             $this->lo = ($this->hi << (32 - $bits)) | ($this->lo >> $bits);
             $this->hi = $newHigh;
         }
+	
+		
         return $this; //for chaining..
     }
 
@@ -379,7 +402,13 @@ final class o_u64 {
         $c->lo = $this->lo & $oWord->lo;
         return $c; //for chaining..
     }
+   function __or(o_u64 $oWord) {
 
+        $c = new o_u64(0, 0);
+        $c->hi = $this->hi | $oWord->hi;
+        $c->lo = $this->lo | $oWord->lo;
+        return $c; //for chaining..
+    }
 //Creates a deep copy of this Word..
     function __clone() {
         return new o_u64($this->hi, $this->lo);
@@ -542,20 +571,41 @@ function xORTable(&$d, $s1, $s2, $len) {
 }
 
 function bufferEncode64(&$buffer, $offset, $uint64) {
-    $buffer[$offset] = $uint64->hi >> 24;
+    $buffer[$offset] = $uint64->hi >> 24 & 0xFF;
     $buffer[$offset + 1] = $uint64->hi >> 16 & 0xFF;
     $buffer[$offset + 2] = $uint64->hi >> 8 & 0xFF;
     $buffer[$offset + 3] = $uint64->hi & 0xFF;
-    $buffer[$offset + 4] = $uint64->lo >> 24;
+    $buffer[$offset + 4] = $uint64->lo >> 24 & 0xFF;
     $buffer[$offset + 5] = $uint64->lo >> 16 & 0xFF;
     $buffer[$offset + 6] = $uint64->lo >> 8 & 0xFF;
     $buffer[$offset + 7] = $uint64->lo & 0xFF;
+}
+
+function bufferEncode64_(&$buffer, $offset, $uint64) {
+    $buffer[$offset] = $uint64->hi >> 0 & 0xFF;
+    $buffer[$offset + 1] = $uint64->hi >> 8 & 0xFF;
+    $buffer[$offset + 2] = $uint64->hi >> 16 & 0xFF;
+    $buffer[$offset + 3] = $uint64->hi >>24 & 0xFF;
+    $buffer[$offset + 4] = $uint64->lo >> 0 & 0xFF;
+    $buffer[$offset + 5] = $uint64->lo >> 8 & 0xFF;
+    $buffer[$offset + 6] = $uint64->lo >> 16 & 0xFF;
+    $buffer[$offset + 7] = $uint64->lo >> 24 & 0xFF;
 }
 function b2int64($b){
 	return new o_u64(
                 ($b[0] << 24) | ($b[ 1] << 16) | ($b[  2] << 8) | $b[ 3]<<0
                 , ($b[ 4] << 24) | ($b[ 5] << 16) | ($b[6] << 8) | $b[ 7]<<0);
 }
+function b2int64_($b){
+	return new o_u64(
+                ($b[0] << 0) | ($b[ 1] << 8) | ($b[  2] <<16) | $b[ 3]<<24
+                , ($b[ 4] <<0) | ($b[ 5] << 8) | ($b[6] << 16) | $b[ 7]<<24);
+}
+function b32toint($x,$offset=0){
+	 return ($x[$offset+0]<<0 |$x[$offset+1]<<8 |$x[$offset+2]<<16 |$x[$offset+3]<<24);
+}
+
+
 function bytes2Int64Buffer($b) {
     if (!$b)
         return [];

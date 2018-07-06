@@ -7,6 +7,7 @@ require_once("jh.php");
 require_once("oaes.php");
 require_once("keccak.php");
 require_once("blake256.php");
+require_once("keccak2.php");
 
 
 
@@ -28,6 +29,13 @@ function keccak_($in){
     keccak1600($in,count($in),$m);
 	return $m;
 }
+/*function keccak_2($in){
+	
+	$m=array();
+
+	return (new kc())->keccak64(byteArraytoStr($in),200,200,0x01,true);
+}
+*/
 function blake256($in){
 	$o=array();
 	blake256_hash($o,$in,count($in));
@@ -120,31 +128,28 @@ $out=$save;
 
 
 }
-function aes_round_out(array $block,int $loc,$round_key){
 
-	$$block=array_slice($block,$loc,16);
-		sub_bytes($$block);
-		oaes_shift_rows($$block);
-mix_columns($$block);//too slow
-add_round_key($$block,$round_key);
-return $$block;
-}
-function shift_rows(&$state) {
-/*
-	for ($i = 1; $i < 4; $i++) {
-		$s = 0;
-		while ($s < $i) {
-			$tmp = $state[4*$i+0];
-			
-			for ($k = 1; $k < 4; $k++) {
-				$state[4*$i+$k-1] = $state[4*$i+$k];
-			}
+function SubAndShiftAndMixAddRound(array &$writeinto,array $out,$round_key){ // int[] round_key
+	global $table1,$table2,$table3,$table4;
+	$save=array_fill(0,16,0);
 
-			$state[4*$i+4-1] = $tmp;
-			$s++;
-		}
-	}*/
+    $nb = $table1[$out[0]] ^ $table2[$out[5]] ^ $table3[$out[10]] ^ $table4[$out[15]] ^ ($round_key[0]<<0 |$round_key[1]<<8 |$round_key[2]<<16 |$round_key[3]<<24);//4byte
+	$save[0]=$nb & 0xFF;$save[1]=$nb>>8 & 0xFF;$save[2]=$nb>>16  & 0xFF;$save[3]=$nb>>24 ;
+	
+    $nb =  $table4[$out[3]] ^ $table1[$out[4]] ^ $table2[$out[9]] ^ $table3[$out[14]] ^ ($round_key[4]<<0 |$round_key[5]<<8 |$round_key[6]<<16 |$round_key[7]<<24);//4byte
+	$save[4]=$nb & 0xFF;$save[5]=$nb>>8 & 0xFF;$save[6]=$nb>>16  & 0xFF;$save[7]=$nb>>24;
+
+	 
+    $nb = $table3[$out[2]] ^ $table4[$out[7]] ^ $table1[$out[8]] ^ $table2[$out[13]] ^ ($round_key[8]<<0 |$round_key[9]<<8 |$round_key[10]<<16 |$round_key[11]<<24);//4byte
+	$save[8]=$nb & 0xFF;$save[9]=$nb>>8 & 0xFF;$save[10]=$nb>>16  & 0xFF;$save[11]=$nb>>24;
+
+    $nb = $table2[$out[1]] ^ $table3[$out[6]] ^ $table4[$out[11]] ^ $table1[$out[12]] ^ ($round_key[12]<<0 |$round_key[13]<<8 |$round_key[14]<<16 |$round_key[15]<<24);//4byte
+	$save[12]=$nb & 0xFF;$save[13]=$nb>>8 & 0xFF;$save[14]=$nb>>16  & 0xFF;$save[15]=$nb>>24;
+
+$writeinto=$save;
 }
+
+
 
 function xor_($x,$y)
 {
@@ -155,58 +160,95 @@ function xor_($x,$y)
 	return $res;
 }
 function e2i($x){
-	return $a[0] & 0x1FFFF0;
+	return $x & 0x1FFFF0;
 }
-function mul_sum_xor_dst(&$a,&$c,&$dst){//char $a char $c
-	$hi=b2int64(array_slice($a,0,8));
-	$lo=b2int64(array_slice($dst,0,8));
+function byteArraytoStr($b){
+	$res="";
+	for($i=0;$i<count($b);$i++)
+		$res.=chr($b[$i]);
+	return $res;
+}
+function mul_sum_xor_dst($a,&$c,&$dst,$offset=0){//char $a char $c
+	$hi=b2int64_(slice($a,0,8));
+	$lo=b2int64_(slice($dst,$offset+0,8));
+	
 	$u1=$hi->__and(o_u(0xffffffff,0));
+
 	$v1=$lo->__and(o_u(0xffffffff,0));
-	$t=$hi->multiply($lo);
+	$t=$u1->Flip()->multiply($v1->Flip())->Flip();
 
 	$w3=$t->__and(o_u(0xffffffff,0));
 	$k=$t->shiftLeft(32);
 
-	$hi=$hi->shiftRightUnsigned(32);
+	$hi=$hi->shiftLeft(32);
 
 		
-	$t=$hi->multiply($v1)->plus($k);
-
+	$t=$hi->Flip()->multiply($v1->Flip())->plus($k->Flip())->Flip();
 		
 	$k=$t->__and(o_u(0xffffffff,0));
+
 	$v1=$t->shiftLeft(32);
-		
+	
 	$lo=$lo->shiftLeft(32);
-	$t=$u1->multiply($lo)->plus($k);
-	$k=$t->shiftLeft(32);
 		
-	$hi=$hi->multiply($lo)->plus($v1)->plus($k);
+	$t=$u1->Flip()->multiply($lo->Flip())->plus($k->Flip())->Flip();
+	
+	$k=$t->shiftLeft(32);
+
+	$hi=$hi->Flip()->multiply($lo->Flip())->plus($v1->Flip())->plus($k->Flip())->Flip();
+	
+	
 	$lo=$t->shiftRightUnsigned(32)->plus($w3);
 	
-
-	$lo=$lo->plus(b2int64(array_slice($c,8,8)));
-	$hi=$hi->plus(b2int64(array_slice($c,0,8)));
+	
+	$lo=$lo->Flip()->plus(b2int64_(slice($c,8,8))->Flip())->Flip();
+	$hi=$hi->Flip()->plus(b2int64_(slice($c,0,8))->Flip())->Flip();
+		
+		
 /*		$tmp=array_fill(0,8,0);
 
 	bufferEncode64($tmp,0,$lo);
 
 		print_r($tmp);*/
-	bufferEncode64($c,0,b2int64(array_slice($dst,0,8))->__xor($hi));
-	bufferEncode64($c,8,b2int64(array_slice($dst,8,8))->__xor($lo));
+	bufferEncode64_($c,0,b2int64_(slice($dst,$offset+0,8))->__xor($hi));
+	bufferEncode64_($c,8,b2int64_(slice($dst,$offset+8,8))->__xor($lo));
 	
-	bufferEncode64($dst,0,$hi);
-	bufferEncode64($dst,8,$lo);
+
+/*if($hi->hi & 0xFF  >255){
+		print_r($hi );
+		exit();
+		
+}*/
+	bufferEncode64_($dst,$offset+0,$hi);
+	bufferEncode64_($dst,$offset+8,$lo);
+	
 	
 	
 }
+function xor_blocks(&$a,$b,$offset=0){
+	bufferEncode64($a,$offset+0,b2int64(slice($a,$offset+0,8))->setxorOne(b2int64(slice($b,0,8))));
+	bufferEncode64($a,$offset+8,b2int64(slice($a,$offset+8,8))->setxorOne(b2int64(slice($b,8,8))));
+}
+
+function xor_blocks_dst($a, $b, &$dst,$offset=0)
+{
+bufferEncode64($dst,$offset+0,b2int64(slice($a,0,8))->__xor(b2int64(slice($b,0,8))));
+bufferEncode64($dst,$offset+8,b2int64(slice($a,8,8))->__xor(b2int64(slice($b,8,8))));
+}
+function slice(&$ar,$loc,$len){
+	$new=array_fill(0,$len,0);
+	for($i=0;$i<$len;$i++)
+	$new[$i]=$ar[$loc+$i];
+return $new;
+}
+
 function cryptonight($in){
 	$len=32;
 		
-	$data=keccak_($in);
+	$data=keccak_($in);//√
 	//$cache= array_fill(0, 2097152, 0);
 
-	$cache=array();
-	$first32=array_slice($data,0,32);
+	$first32=slice($data,0,32);
 	$aes=new oaes_ctx();
 	oaes_key_import_data($aes,$first32,$len);
 	$blocks=[];
@@ -216,17 +258,17 @@ function cryptonight($in){
 	
 
 	for($i=0;$i<8;$i++)
-		$blocks[$i]=array_slice($data,64+$i*16,16);
+		$blocks[$i]=slice($data,64+$i*16,16);
 	
 	// $$block=$first32;
 	//$text=[];//8
 $longstate=array_fill(0,2097152,0);
-
-	for($i=0;$i<2097152/16;$i+=128){//2MB
+//$time=microtime(TRUE);
+	for($i=0;$i<2097152;$i+=128){//2MB
 	
 	for($j=0;$j<10;$j++){
-		$ptr=array_slice($aes->key->exp_data,$j<<4,16);//$j<<4=$j*16
-	
+		$ptr=slice($aes->key->exp_data,$j<<4,16);//$j<<4=$j*16
+
 		SubAndShiftAndMixAddRoundInPlace($blocks[0],$ptr);
 		SubAndShiftAndMixAddRoundInPlace($blocks[1],$ptr);
 		SubAndShiftAndMixAddRoundInPlace($blocks[2],$ptr);
@@ -235,35 +277,61 @@ $longstate=array_fill(0,2097152,0);
 		SubAndShiftAndMixAddRoundInPlace($blocks[5],$ptr);
 		SubAndShiftAndMixAddRoundInPlace($blocks[6],$ptr);
 		SubAndShiftAndMixAddRoundInPlace($blocks[7],$ptr);
-		
-	//$time=microtime(TRUE);
-	$combine=array_merge($blocks[0],$blocks[1],$blocks[2],$blocks[3],$blocks[4],$blocks[5],$blocks[6],$blocks[7]);
+	
+	}
+
+		$combine=array_merge($blocks[0],$blocks[1],$blocks[2],$blocks[3],$blocks[4],$blocks[5],$blocks[6],$blocks[7]);
 	_memcpy($longstate,$i,$combine,0,128);
 
-
-	//$tm=(microtime(TRUE)-$time);
-	//	echo "$tm\n";	
-	}
-
-	
 	//print_r (" $i \r\n");
 	}
-
-		/*
 	
-$ab=xor_(array_slice($data,0,32),array_slice($data,32,32));
-$a=array_slice($ab,0,16);$b=array_slice($ab,16,16);
+	//√
+	
+/*	$tm=(microtime(TRUE)-$time);
+	echo "$tm\n".count($longstate);		
+	*/
+$ab=xor_(slice($data,0,32),slice($data,32,32));
+$a=slice($ab,0,16);$b=slice($ab,16,16);
+$c=array_fill(0,16,0);
+
+//√
 
 for($i=0;$i<524288/2;++$i){
-	$j=e2i($a);
-	$out=array();
-	aes_round_out($longstate,$j,$a,$out);
-	$ret=xor_($out,$b);
-	_memcpy($longstate,$j,$ret,0,16);
 	
+	$j=e2i(b32toint($a,0));
+//Iter 1	
+
+SubAndShiftAndMixAddRound($c,slice($longstate,$j,16),$a); //1s
+
+xor_blocks_dst($c,$b,$longstate,$j); //2s
+
+
+
+//Iter 2
+//echo e2i(b32toint($c,0))."\n";
+
+mul_sum_xor_dst($c,$a,$longstate,e2i(b32toint($c,0)));
+
+
+//Iter 3
+$j=e2i(b32toint($a,0));
+SubAndShiftAndMixAddRound($b,slice($longstate,$j,16),$a);
+
+xor_blocks_dst($b,$c,$longstate,$j);
+
+//Iter 4
+mul_sum_xor_dst($b,$a,$longstate,e2i(b32toint($b,0)));
+
+
+}
 	
+
+
+
+//√//
 	
-}*/
+
 	//$cache=array_merge($cache,$$block);
 	
 	
@@ -272,20 +340,117 @@ for($i=0;$i<524288/2;++$i){
 	
 	//oaes_key_import_data($aes,$data,$len);
 	
+	for($i=0;$i<8;$i++)
+		$blocks[$i]=slice($data,64+$i*16,16);
+	$aes=new oaes_ctx();
+	oaes_key_import_data($aes,slice($data,32,32),$len);
+	for($i=0;$i<2097152;$i+=128){
+		xor_blocks($blocks[0],slice($longstate,$i+16*0,16));
+		xor_blocks($blocks[1],slice($longstate,$i+16*1,16));
+		xor_blocks($blocks[2],slice($longstate,$i+16*2,16));
+		xor_blocks($blocks[3],slice($longstate,$i+16*3,16));
+		xor_blocks($blocks[4],slice($longstate,$i+16*4,16));
+		xor_blocks($blocks[5],slice($longstate,$i+16*5,16));
+		xor_blocks($blocks[6],slice($longstate,$i+16*6,16));
+		xor_blocks($blocks[7],slice($longstate,$i+16*7,16));
+		
+	
+	for($j=0;$j<10;$j++){
+		$ptr=slice($aes->key->exp_data,$j<<4,16);//$j<<4=$j*16
+
+		SubAndShiftAndMixAddRoundInPlace($blocks[0],$ptr);
+		SubAndShiftAndMixAddRoundInPlace($blocks[1],$ptr);
+		SubAndShiftAndMixAddRoundInPlace($blocks[2],$ptr);
+		SubAndShiftAndMixAddRoundInPlace($blocks[3],$ptr);
+		SubAndShiftAndMixAddRoundInPlace($blocks[4],$ptr);
+		SubAndShiftAndMixAddRoundInPlace($blocks[5],$ptr);
+		SubAndShiftAndMixAddRoundInPlace($blocks[6],$ptr);
+		SubAndShiftAndMixAddRoundInPlace($blocks[7],$ptr);
+	
+	}
+	
+	
+	}
+	
+		$combinestr=array_merge($blocks[0],$blocks[1],$blocks[2],$blocks[3],$blocks[4],$blocks[5],$blocks[6],$blocks[7]);
+
+		//$data=substr_replace(($data,$combinestr,64,128);
+			//print_r($combinestr);exit();
+		
+	_memcpy($data,64,$combinestr,0,128);
+	
+	
+	//√
+$bks=array_fill(0,25,0);
+for($i=0;$i<25;$i++){
+	$bks[$i]=b2int64_(slice($data,$i*8,8))->Flip();
+	
+}
+
+
+	keccakf($bks,24);
+$data_ret=array_fill(0,200,0);
+for($i=0;$i<25;$i++)
+	___encodeLELong($bks[$i],$data_ret,$i*8);
+		
+$ret=[];
+
+$chosen=$data_ret[0] & 3 ;
+echo ($data_ret[1])."a\n";
+echo $chosen."\n";
+
+//√
+switch($chosen){
+	case 0:
+	$ret=blake256($data_ret);break;
+	case 1:
+	$ret=groestl256($data_ret);break;
+	case 2:
+	$ret=jh($data_ret);break;
+	case 3:
+	$ret=skein($data_ret);break;
+}
+
+
+return $ret;
+
+
 	
 	
 }
+
 //print_r(groestl256([11,23,53]));
 //print_r(skein(array()));
 //print_r(jh( array(0x2F, 0x7C)));
 //print_r(keccak_( array(0xCC)));
-//print_r(blake256( array(0xCC)));
- cryptonight(array(0xCC));
+
+//print_r(trans((-858481339)<<20) );
 
 
-//$a=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
-//$c=[51,46,3,4,5,6,7,8,9,10,11,55,13,14,15,16];
-//$dst=array_fill(0,16,0);
+
+echo(bin2hex(byteArraytoStr(cryptonight(array(3)))));
+
+
+
+//$a=[150,63,229,152,61,168,138,202,25,130,255,44,72,173,253,111];
+/*$b=[85,115,145,139,52,104,60,9,147,40,225,26,229,35,215,183];
+$c=[130,33,17,77,106,106,99,209,143,202,217,144,124,30,24,58];
+mul_sum_xor_dst($a,$b,$c);
+print_r($b);
+
+exit();*/
+/*$dst=array_fill(0,16,0);
+xor_blocks_dst($a,$c,$dst);
+print_r($dst);
+*/
+
+//print_r(blake256( slice($a,0,16)));
+
+
+
+//xor_blocks($a,$c);
+//print_r($a);
+
 //SubAndShiftAndMixAddRoundInPlace($a,[4,5,6,7,8,9,10,11,1,2,3,4,5,6,7,8]);
 
 //mul_sum_xor_dst($a,$c,$dst);

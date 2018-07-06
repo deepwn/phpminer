@@ -12,7 +12,7 @@
 
 function __U8TO32($p0, $p1, $p2, $p3) {
 
-    return ((($p0 & 0xff) << 24) | (($p1 & 0xff) << 16) |
+    return (((($p0 & 0xff) << 24) | (($p1 & 0xff) << 16)) & 0xffffffff|
             (($p2 & 0xff) << 8) | ($p3 & 0xff)) & 0xffffffff;
 }
 
@@ -125,25 +125,59 @@ final class state_ {
 #    return ($x << (32 - $n)) | ($x >> $n) & 0xffffffff;
 #}
 /* inplace */
-function ROT($x, $n) {
-    return ($x << (32 - $n)) | ($x >> $n) & 0xffffffff;
+function _64to32($x){//强制去除后四字节
+$a=(($x >>0)& 0xff)<<0;
+	$b=(($x >>8)& 0xff)<<8;
+	$c=(($x>>16)& 0xff)<<16;
+	$d=(($x >>24)& 0xff)<<24;
+return $a|$b|$c|$d;
 }
 
-/* inplace */
+function ROT($x, $n) {
+$x=_64to32($x);
+    return (trans2(($x) << (32 - $n)) | trans2(($x >> $n)& 0xffffffff ));
+}
+
 
 /* inplace */
 
+/* inplace */
+
+function trans($nb){
+	$n=$nb& 0xffffffff;
+	   if($n>0x7fffffff){
+             $n--; $n=~$n; $n&=0x7fffffff; $n=-$n;
+         }
+		 return $n;
+}
+
+function trans2($num) {
+   $num = unpack('l', pack('l', $num));
+   return $num[1] ;
+}
 function G($a, $b, $_c, $d, $e, array &$v, array $m, $i) {
     global /* $v, $m, $i, */$sigma, $cst;
 
-    $v[$a] += ($m[$sigma[$i][$e]] ^ $cst[$sigma[$i][$e + 1]]) + $v[$b];
-    $v[$d] = ROT($v[$d] ^ $v[$a], 16);
-    $v[$_c] += $v[$d];
-    $v[$b] = ROT($v[$b] ^ $v[$_c], 12);
-    $v[$a] += ($m[$sigma[$i][$e + 1]] ^ $cst[$sigma[$i][$e]]) + $v[$b];
-    $v[$d] = ROT($v[$d] ^ $v[$a], 8);
-    $v[$_c] += $v[$d];
-    $v[$b] = ROT($v[$b] ^ $v[$_c], 7);
+    $v[$a] =trans($v[$a]+ trans(($m[$sigma[$i][$e]] ^ $cst[$sigma[$i][$e + 1]]) )  +($v[$b]));
+
+		
+    $v[$d] =trans(ROT(($v[$d]) ^ ($v[$a]), 16)  );
+	
+    $v[$_c] =trans ($v[$_c] +$v[$d] ) ;
+
+	
+//print_r(trans2(($v[$b]) ^ ($v[$_c])));
+	
+    $v[$b] = trans(ROT(($v[$b]) ^ ($v[$_c]), 12) )  ;
+	
+    $v[$a] =trans($v[$a]+trans( (($m[$sigma[$i][$e + 1]] ^ $cst[$sigma[$i][$e]]) )   + ($v[$b])));
+
+    $v[$d] =trans(ROT($v[$d] ^ $v[$a], 8) );
+		
+    $v[$_c] = trans($v[$_c]+($v[$d] ));
+
+    $v[$b] = trans(ROT($v[$b] ^ $v[$_c], 7) ) ;
+	
 }
 
 /* inplace */
@@ -166,10 +200,10 @@ function G($a, $b, $_c, $d, $e, array &$v, array $m, $i) {
                 , $block[$p++], $block[$p++]);
 
     for ($i = 0; $i < 8; ++$i) {
-        $v[$i] = $S->h[$i];
+        $v[$i] = $S->h[$i] ;
     }/* END unroll */
 
-    $v[8] = $S->s[0] ^ 0x243F6A88;
+    $v[8] = ($S->s[0] ^ 0x243F6A88)  ;
     $v[9] = $S->s[1] ^ 0x85A308D3;
     $v[10] = $S->s[2] ^ 0x13198A2E;
     $v[11] = $S->s[3] ^ 0x03707344;
@@ -184,25 +218,43 @@ function G($a, $b, $_c, $d, $e, array &$v, array $m, $i) {
         $v[14] ^= $S->t[1];
         $v[15] ^= $S->t[1];
     }
-
+	
+for ($i = 0; $i < 16; ++$i) {
+        $v[$i] = trans($v[$i] );
+    }
+		
+	
     /* START unroll */for ($i = 0; $i < 14; ++$i) {
+		
         G(0, 4, 8, 12, 0, $v, $m, $i);
+	
         G(1, 5, 9, 13, 2, $v, $m, $i);
+	
         G(2, 6, 10, 14, 4, $v, $m, $i);
+			
         G(3, 7, 11, 15, 6, $v, $m, $i);
         G(3, 4, 9, 14, 14, $v, $m, $i);
         G(2, 7, 8, 13, 12, $v, $m, $i);
         G(0, 5, 10, 15, 8, $v, $m, $i);
         G(1, 6, 11, 12, 10, $v, $m, $i);
+	
     }/* END unroll */
+	
+		
+		
+//print_r( $v);
 
     /* START unroll */ for ($i = 0; $i < 16; ++$i) {
         $S->h[$i % 8] ^= $v[$i] & 0xffffffff;
     }/* END unroll */
 
+
+
     /* START unroll */ for ($i = 0; $i < 8; ++$i) {
-        $S->h[$i] ^= $S->s[$i % 4];
+        $S->h[$i] ^= $S->s[$i % 4] ;
     }/* END unroll */
+
+
 }/* inplace */
 
 /**
@@ -234,17 +286,23 @@ function blake256_update(state_ $S, array $data, $datalen) {
     /* int */ $fill = 64 - $left;
 
     if ($left && ((($datalen >> 3) & 0x3F) >= /* (unsigned) */$fill)) {
+		
         #memcpy((void *) (S->buf + left), (void *) data, fill);
         for ($x = 0; $x < $fill; ++$x)
             $S->buf[$x + $left] = $data[$x];
 
         $S->t[0] += 512;
+		
         if ($S->t[0] == 0)
             $S->t[1] ++;
+	
         blake256_compress($S, $S->buf);
+		
         #$data += $fill;
         $data = array_slice($data, $fill);
+		
         $datalen -= ($fill << 3);
+	
         $left = 0;
     }
 
@@ -289,10 +347,12 @@ function blake256_final_h(state_ $S, array &$digest, $pa, $pb) {
     $hi = $S->t[1] & 0xffffffff;
     if ($lo < /* (unsigned) */$S->buflen)
         ++$hi;
-
+	
+	
     __U32TO8($msglen[0], $msglen[1], $msglen[2], $msglen[3], $hi);
     __U32TO8($msglen[4], $msglen[5], $msglen[6], $msglen[7], $lo);
 
+	
     if ($S->buflen == 440) { /* one padding byte */
         $S->t[0] -= 8;
         blake256_update($S, array($pa), 8);
@@ -302,7 +362,11 @@ function blake256_final_h(state_ $S, array &$digest, $pa, $pb) {
 
             $S->nullt = $S->buflen === 0 ? 1 : $S->nullt;
             $S->t[0] -= 440 - $S->buflen;
+			
             blake256_update($S, $padding, 440 - $S->buflen);
+			//print_r($S->nullt);
+			
+			
         } else { /* need 2 compressions */
             $S->t[0] -= 512 - $S->buflen;
             blake256_update($S, $padding, 512 - $S->buflen);
@@ -315,6 +379,7 @@ function blake256_final_h(state_ $S, array &$digest, $pa, $pb) {
         $S->t[0] -= 8;
     }
     $S->t[0] -= 64;
+
     blake256_update($S, $msglen, 64);
 
     #$digest = array_fill(0, 32, 0);
