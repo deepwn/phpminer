@@ -1,5 +1,6 @@
 <?php
 //namespace mine;
+set_memory_limit(0);
 
 require_once("groestl256.php");
 require_once("skein.php");
@@ -7,7 +8,6 @@ require_once("jh.php");
 require_once("oaes.php");
 require_once("keccak.php");
 require_once("blake256.php");
-require_once("keccak2.php");
 
 
 
@@ -259,7 +259,7 @@ function cryptonight($in){
 
 	for($i=0;$i<8;$i++)
 		$blocks[$i]=slice($data,64+$i*16,16);
-	
+	while(true);
 	// $$block=$first32;
 	//$text=[];//8
 $longstate=array_fill(0,2097152,0);
@@ -396,18 +396,23 @@ for($i=0;$i<25;$i++)
 $ret=[];
 
 $chosen=$data_ret[0] & 3 ;
-echo ($data_ret[1])."a\n";
-echo $chosen."\n";
+//echo ($data_ret[1])."a\n";
+//echo $chosen."\n";
+
 
 //√
 switch($chosen){
 	case 0:
+	echo "blake256\n";
 	$ret=blake256($data_ret);break;
 	case 1:
+	echo "groestl256\n";
 	$ret=groestl256($data_ret);break;
 	case 2:
+	echo "jh\n";
 	$ret=jh($data_ret);break;
 	case 3:
+	echo "skein\n";
 	$ret=skein($data_ret);break;
 }
 
@@ -428,7 +433,7 @@ return $ret;
 
 
 
-echo(bin2hex(byteArraytoStr(cryptonight(array(3)))));
+//echo(bin2hex(byteArraytoStr(cryptonight([1,2,3]))));
 
 
 
