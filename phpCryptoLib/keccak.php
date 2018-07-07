@@ -1,14 +1,12 @@
 <?php
-require_once 'u64.php';
+require_once 'shit/u64.php';
+#require_once 'shit/u64.php';
 
 define('HASH_DATA_AREA', 136);
 define('KECCAK_ROUNDS', 24);
 
 function ROTL64(o_u64 $x, $y) {
     return $x->rotateLeft($y);
-
-//return $x->shiftLeft($y)->__or($x->shiftRightUnsigned(64-$y));
-	
     #var_dump($x, $y);die;
     #return ((($x) << ($y)) | (($x) >> (64 - ($y))));
 }
@@ -43,163 +41,61 @@ $keccakf_piln = array(
  * @param int $rounds
  */
 function keccakf(/* uint64_t[25] */array &$st, /* int */ $rounds) {
-	
     global $keccakf_piln, $keccakf_rotc, $keccakf_rndc;
-
     /* int */ $i = 0;
     $j = 0;
     $round = 0;
     /* uint64_t */ $t = new o_u64(0x0, 0x0);
     $bc = array_fill(0, 5, NULL);
-	
-	
     for ($bc_i = 0; $bc_i < 5; ++$bc_i)
         $bc[$bc_i] = new o_u64(0x0, 0x0);
 
-	
     for ($round = 0; $round < $rounds; ++$round) {
 
         // Theta
-	
-	
         for ($i = 0; $i < 5; ++$i)
-            $bc[$i]=$st[$i]->__xor($st[$i + 5])->__xor($st[$i + 10])->__xor($st[$i + 15])->__xor($st[$i + 20]);
-	
+            $bc[$i]->setxor64($st[$i]
+                    , $st[$i + 5], $st[$i + 10], $st[$i + 15], $st[$i + 20]);
+
         for ($i = 0; $i < 5; ++$i) {
             $t = $bc[($i + 4) % 5]->__xor(ROTL64($bc[($i + 1) % 5], 1));
-		
             $st[$i]->setxorOne($t);
             $st[$i + 5]->setxorOne($t);
             $st[$i + 10]->setxorOne($t);
             $st[$i + 15]->setxorOne($t);
             $st[$i + 20]->setxorOne($t);
-		
-   
-		}
-	
-
+        }
 
         // Rho Pi
         $t = clone $st[1];
-	
-			//exit();
-		
-		//print_r($t);
-		
         for ($i = 0; $i < 24; ++$i) {
             $j = (int) $keccakf_piln[$i];
             $bc[0] = clone $st[$j];
-			
             $st[$j] = ROTL64($t, $keccakf_rotc[$i]);
-		
             $t = clone $bc[0];
         }
-	
-			
+
         //  Chi
         for ($j = 0; $j < 25; $j += 5) {
-		
             for ($i = 0; $i < 5; ++$i)
                 $bc[$i] = clone $st[$j + $i];
-	
 
-			
-			
             for ($i = 0; $i < 5; ++$i)
-			   $st[$j + $i]->setxorOne($bc[($i + 1) % 5]->not()->__and($bc[($i + 2) % 5]));
-			
-			
-			;
+                $st[$j + $i]->setxorOne($bc[($i + 1) % 5]->not()->__and($bc[($i + 2) % 5]));
         }
-		
-	
 
         //  Iota
-        $st[0]->setxorOne($keccakf_rndc[$round]->setFlip());
-	
+        $st[0]->setxorOne($keccakf_rndc[$round]);
     }
-
-		
-		
-		
 }
 
 
 // compute a keccak hash (md) of given byte length from "in"
 #typedef uint64_t state_t[25];
 #function keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen) {
-	function ___decodeLELong($buf, $off) {
-        /* return intval(($buf[$off] & 0xFF) |
-          (($buf[$off + 1] & 0xFF) << 8) |
-          (($buf[$off + 2] & 0xFF) << 16) |
-          (($buf[$off + 3] & 0xFF) << 24) |
-          (($buf[$off + 4] & 0xFF) << 32) |
-          (($buf[$off + 5] & 0xFF) << 40) |
-          (($buf[$off + 6] & 0xFF) << 48) |
-          (($buf[$off + 7] & 0xFF) << 56)); */
-
-        $l = (($buf[$off] & 0xFF) |
-                (($buf[$off + 1] & 0xFF) << 8) |
-                (($buf[$off + 2] & 0xFF) << 16) |
-                (($buf[$off + 3] & 0xFF) << 24));
-
-        $h = ((($buf[$off + 4] & 0xFF) << 0) |
-                (($buf[$off + 5] & 0xFF) << 8) |
-                (($buf[$off + 6] & 0xFF) << 16) |
-                (($buf[$off + 7] & 0xFF) << 24));
-
-        return new o_u64($h, $l);
-    }
-	 function ___encodeLELong(o_u64 $val,  &$buf, $off) {
-        /* $buf[$off + 0] = BYTE(SHR($val, 0));
-          $buf[$off + 1] = BYTE(SHR($val, 8));
-          $buf[$off + 2] = BYTE(SHR($val, 16));
-          $buf[$off + 3] = BYTE(SHR($val, 24));
-          $buf[$off + 4] = BYTE(SHR($val, 32));
-          $buf[$off + 5] = BYTE(SHR($val, 40));
-          $buf[$off + 6] = BYTE(SHR($val, 48));
-          $buf[$off + 7] = BYTE(SHR($val, 56)); */
-        $buf[$off + 0] = (($val->lo >> 0) & 0xff);
-        $buf[$off + 1] = (($val->lo >> 8) & 0xff);
-        $buf[$off + 2] = (($val->lo >> 16) & 0xff);
-        $buf[$off + 3] = (($val->lo >> 24) & 0xff);
-        ##
-        $buf[$off + 4] = (($val->hi >> 0) & 0xff);
-        $buf[$off + 5] = (($val->hi >> 8) & 0xff);
-        $buf[$off + 6] = (($val->hi >> 16) & 0xff);
-        $buf[$off + 7] = (($val->hi >> 24) & 0xff);
-    }
-
-	
-		 function ___encodeBELong(o_u64 $val, array &$buf, $off) {
-        /* $buf[$off + 0] = BYTE(SHR($val, 0));
-          $buf[$off + 1] = BYTE(SHR($val, 8));
-          $buf[$off + 2] = BYTE(SHR($val, 16));
-          $buf[$off + 3] = BYTE(SHR($val, 24));
-          $buf[$off + 4] = BYTE(SHR($val, 32));
-          $buf[$off + 5] = BYTE(SHR($val, 40));
-          $buf[$off + 6] = BYTE(SHR($val, 48));
-          $buf[$off + 7] = BYTE(SHR($val, 56)); */
-	   $buf[$off + 0] = (($val->hi >> 0) & 0xff);
-        $buf[$off + 1] = (($val->hi >> 8) & 0xff);
-        $buf[$off + 2] = (($val->hi >> 16) & 0xff);
-        $buf[$off + 3] = (($val->hi >> 24) & 0xff);
-		
-        $buf[$off + 4] = (($val->lo >> 0) & 0xff);
-        $buf[$off + 5] = (($val->lo >> 8) & 0xff);
-        $buf[$off + 6] = (($val->lo >> 16) & 0xff);
-        $buf[$off + 7] = (($val->lo >> 24) & 0xff);
-        ##
-    
-    }
-	function _memcpy( &$arr1, $off1, $arr2, $off2, $len) {
-    for ($i = 0; $i < $len; ++$i)
-        $arr1[$off1 + $i] = $arr2[$off2 + $i];
-}
 function keccak(array $in, $inlen, /*array*/ &$md, $mdlen) {
     /* @var $st o_u64[] */
     #state_t st;
-	
     $st = array_fill(0, 25, NULL);
     for ($st_i = 0; $st_i < 25; ++$st_i)
         $st[$st_i] = new o_u64(0x0, 0x0);
@@ -212,14 +108,13 @@ function keccak(array $in, $inlen, /*array*/ &$md, $mdlen) {
     $rsizw = $rsiz / 8;
 
     for (; $inlen >= $rsiz
-    ; $inlen -= $rsiz, $in = slice($in, $rsiz)) {
+    ; $inlen -= $rsiz, $in = array_slice($in, $rsiz)) {
         for ($i = 0; $i < $rsizw; ++$i)
-            $st[$i]->setxorOne(___decodeLELong($in, $i * 8))->setFlip();
+            $st[$i]->setxorOne(___decodeLELong($in, $i * 8));
 
         var_dump(bin2hex(implode('', $st)));die;
         keccakf($st, KECCAK_ROUNDS);
     }
-
 
     // last block and padding
     _memcpy($temp, 0, $in, 0, $inlen);
@@ -230,14 +125,13 @@ function keccak(array $in, $inlen, /*array*/ &$md, $mdlen) {
     $temp[$rsiz - 1] |= 0x80;
 
     for ($i = 0; $i < $rsizw; ++$i)
-        $st[$i]->setxorOne(___decodeLELong($temp, $i * 8))->setFlip();
+        $st[$i]->setxorOne(___decodeLELong($temp, $i * 8));
 
     keccakf($st, KECCAK_ROUNDS);
 
     #_memcpy($md, 0, $st, 0, $mdlen);
     for ($i = 0; $i < 25; ++$i)
-        ___encodeBELong($st[$i], $md, $i * 8);
-	
+        ___encodeLELong($st[$i], $md, $i * 8);
 }
 
 #function keccak1600(const uint8_t *in, int inlen, uint8_t *md) {
@@ -245,12 +139,9 @@ function keccak(array $in, $inlen, /*array*/ &$md, $mdlen) {
 function keccak1600(array $in, $inlen, array &$md) {
     keccak($in, $inlen, $md, 200);
 }
-/*
+
 $in = array(0xCC);
 $md = array();
 keccak($in, 1, $md, 200);
 $h = bin2hex(implode('', array_map('chr', $md)));
 var_dump($h);
-*/
-
-//return keccak1600

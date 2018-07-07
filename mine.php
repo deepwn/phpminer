@@ -1,45 +1,28 @@
 <?php
 //namespace mine;
-
+/*
 require_once("groestl256.php");
 require_once("skein.php");
-require_once("jh.php");
+require_once("jh.php");*/
 require_once("oaes.php");
+
 require_once("keccak.php");
-require_once("blake256.php");
+
+//require_once("blake256.php");
+
+require_once 'phpCryptoLib/vendor/autoload.php';
 
 
+use Shift196\AKashLib\Hasher; //import Shift196's PHP-Crypto Library
+use Shift196\AKashLib\InputDataSupplier;
+Hasher::regBuiltinAlgos(); //Reg Default Algos
 
-function groestl256($in){
-	$out = array_fill(0, 32, 0);
-crypto_hash_gl($out,$in,count($in));
-	return $out;
-}
-
-function skein($in){
-	$s=new Skein256;
-	return $s->digest1($in);
-}
-function jh($in){
-	 return array_slice(jh_($in, 256, count($in) * 8),0,32);
-}
 function keccak_($in){
 	$m=array();
     keccak1600($in,count($in),$m);
 	return $m;
 }
-/*function keccak_2($in){
-	
-	$m=array();
 
-	return (new kc())->keccak64(byteArraytoStr($in),200,200,0x01,true);
-}
-*/
-function blake256($in){
-	$o=array();
-	blake256_hash($o,$in,count($in));
-	return $o;
-}
 $sub = array(
     // 		0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    a,    b,    c,    d,    e,    f,
     /* 0 */ array(0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76),
@@ -253,7 +236,6 @@ function slice(&$ar,$loc,$len){
 	$new[$i]=$ar[$loc+$i];
 return $new;
 }
-//cryptonight([]);
 
 function cryptonight($in){
 
@@ -424,7 +406,7 @@ $chosen=$data_ret[0] & 3 ;
 
 //√
 	
-
+/*
 switch($chosen){
 	case 0:
 	echo "blake256\n";
@@ -438,10 +420,12 @@ switch($chosen){
 	case 3:
 	echo "skein\n";
 	$ret=skein($data_ret);break;
-}
+}*/
+
+$hashes = ['BLAKE256','GROESTL256','JH256','SKEIN256']; $algo = $hashes[$chosen]; echo "$algo\n";
 //	die((memory_get_usage()/1024)."KB \n");
 
-return $ret;
+return  Hasher::doHash($algo, InputDataSupplier::forByteArray($data_ret))->byteArray();
 
 
 	
@@ -456,8 +440,11 @@ return $ret;
 //print_r(trans((-858481339)<<20) );
 
 
-
-//echo(bin2hex(byteArraytoStr(cryptonight([1,2,3]))));
+   function hex2Bytes($blob) {
+  return array_map('ord', str_split(hex2bin($blob)));
+    }
+	
+die(bin2hex(byteArraytoStr(cryptonight(hex2Bytes("0707a6dc83da05fe4d4fb4910ad5bd171f48ad67561c47b68ab2b4bcd43c26e14306b624f9dd21d24b00007b988c3a0c411265a75d8edf12c39f70a1f4cb3d5663d097c18e09a265bf4afe01")))));
 
 
 

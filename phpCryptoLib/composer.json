@@ -1,0 +1,21 @@
+{
+    "type": "library",
+    "name": "shift196/lib-akash",
+    "description": "AKash it's easy hashing library for PHP.",
+    "version": "1.0.0",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "bogdan",
+            "email": "shift196@yandex.ru"
+        }
+    ],
+    "require": {
+    },
+    "autoload": {
+        "files": [],
+        "psr-4": {
+            "Shift196\\AKashLib\\": "src"
+        }
+    }
+}
