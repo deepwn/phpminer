@@ -1,4 +1,5 @@
 <?php
+@set_time_limit(0); //it's unneccessary
 require_once("mine.php"); // it's the core ,hahaha
 $server="http://13.230.197.214:8541/"; //you can use phpminerBridge.js to build a bridge to MiningPool
 function get($data){

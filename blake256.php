@@ -126,7 +126,7 @@ final class state_ {
 #}
 /* inplace */
 function _64to32($x){//强制去除后四字节
-$a=(($x >>0)& 0xff)<<0;
+$a=(($x )& 0xff);
 	$b=(($x >>8)& 0xff)<<8;
 	$c=(($x>>16)& 0xff)<<16;
 	$d=(($x >>24)& 0xff)<<24;

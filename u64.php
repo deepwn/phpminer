@@ -1,22 +1,23 @@
 <?php
 
+
 function SHR($x, $c) {
-    $x = intval($x); // Because 13.5 >> 0 returns 13. We follow.
 
     $nmaxBits = PHP_INT_SIZE * 8;
     $c %= $nmaxBits;
-
     if ($c)
-        return $x >> $c & ~ (-1 << $nmaxBits - $c);
+        return (int)$x >> $c & ~ (-1 << $nmaxBits - $c);
     else
-        return $x;
+        return (int)$x;
 }
 
 final class o_u64 {
 
+
     function __construct($h, $l) {
         $this->hi = $h; // >>> 0;
         $this->lo = $l; // >>> 0;
+
     }
 
     function set(o_u64 $oWord) {
@@ -34,7 +35,10 @@ final class o_u64 {
 
         //var lowest, lowMid, highMid, highest; //four parts of the whole 64 bit number..
         //need to add the respective parts from each number and the carry if on is present..
-        $lowest = (($this_l & 0XFFFF) + ($o_l & 0XFFFF));
+
+	 $lowest = (($this_l & 0XFFFF) + ($o_l & 0XFFFF));
+
+		
         $lowMid = (SHR($this_l, 16) + SHR($o_l, 16) + SHR($lowest, 16));
         $highMid = ($this_h & 0XFFFF) + ($o_h & 0XFFFF) + SHR($lowMid, 16);
         $highest = SHR($this_h, 16) + SHR($o_h, 16) + SHR($highMid, 16);
@@ -59,18 +63,25 @@ final class o_u64 {
         $c = new o_u64(0, 0);
 //  var lowest, lowMid, highMid, highest; //four parts of the whole 64 bit number..
         //need to add the respective parts from each number and the carry if on is present..
-        $this_h = $this->hi & 0xffffffff;
+
+     
+	 $this_h = $this->hi & 0xffffffff;
         $this_l = $this->lo & 0xffffffff;
         $o_h = $oWord->hi & 0xffffffff;
         $o_l = $oWord->lo & 0xffffffff;
 
         //var lowest, lowMid, highMid, highest; //four parts of the whole 64 bit number..
         //need to add the respective parts from each number and the carry if on is present..
+		
+	    
         $lowest = (($this_l & 0XFFFF) + ($o_l & 0XFFFF))& 0xffffffff;
+		
         $lowMid = (SHR($this_l, 16) + SHR($o_l, 16) + SHR($lowest, 16)) & 0xffffffff;
-        $highMid = (($this_h & 0XFFFF) + ($o_h & 0XFFFF) + SHR($lowMid, 16)) & 0xffffffff;
-        $highest = (SHR($this_h, 16) + SHR($o_h, 16) + SHR($highMid, 16)) & 0xffffffff;
+       
 
+		$highMid = (($this_h & 0XFFFF) + ($o_h & 0XFFFF) + SHR($lowMid, 16)) & 0xffffffff;
+        $highest = (SHR($this_h, 16) + SHR($o_h, 16) + SHR($highMid, 16)) & 0xffffffff;
+ 
         //now set the hgih and the low accordingly..
         $c->lo = (($lowMid << 16) | ($lowest & 0XFFFF))& 0xffffffff;
         $c->hi = ((($highest << 16) | ($highMid & 0XFFFF))) & 0xffffffff;
@@ -183,7 +194,10 @@ final class o_u64 {
         $c = new o_u64(0, 0);
         if ($bits === 0) {
             return clone $this;
-        } else if ($bits > 31) {
+        } else if($bits == 32){
+			  $c->lo = 0;
+            $c->hi = $this_l;
+		} else if ($bits > 32) {
             $c->lo = 0;
             $c->hi = $this_l << ($bits - 32);
         } else {
@@ -241,20 +255,31 @@ final class o_u64 {
     }
 
     function shiftRightUnsigned($bits) {
-
+	
         $bits %= 64;
+		
 
         if ($bits === 0)
             return clone $this;
 
-        $c = new o_u64(0, 0);
-
         $this_h = $this->hi & 0xffffffff;
         $this_l = $this->lo & 0xffffffff;
 
-        if ($bits >= 32) {
-            $c->hi = 0;
+        $c = new o_u64(0,0);
+
+ if ($bits == 32) {
+	
+	 $c->lo = $this_h ;
+	 	 
+
+ }
+	else
+        if ($bits > 32) {
+       	
+	   $c->hi = 0;
+		
             $c->lo = ($this_h >> ($bits - 32));
+		
         } else {
             $bitsOff32 = 32 - $bits;
             $toMoveDown = $this_h << $bitsOff32 >> $bitsOff32;
@@ -262,6 +287,8 @@ final class o_u64 {
             $c->hi = $this_h >> $bits & 0xffffffff;
             $c->lo = ($this_l >> $bits | ($toMoveDown << $bitsOff32) ) & 0xffffffff;
         }
+		
+		
         return $c; //for chaining..
     }
 
@@ -642,24 +669,29 @@ function bufferEncode64_(&$buffer, $offset, $uint64) {
     $buffer[$offset + 6] = $uint64->lo >> 16 & 0xFF;
     $buffer[$offset + 7] = $uint64->lo >> 24 & 0xFF;
 }
+function b2int64_offset(&$b,$of){
+	return new o_u64(
+                ($b[$of+0] << 24) | ($b[ $of+1] << 16) | ($b[ $of+ 2] << 8) | $b[ $of+3]
+                , ($b[ $of+4] << 24) | ($b[ $of+5] << 16) | ($b[$of+6] << 8) | $b[$of+ 7]);
+}
 function b2int64($b){
 	return new o_u64(
-                ($b[0] << 24) | ($b[ 1] << 16) | ($b[  2] << 8) | $b[ 3]<<0
-                , ($b[ 4] << 24) | ($b[ 5] << 16) | ($b[6] << 8) | $b[ 7]<<0);
+                ($b[0] << 24) | ($b[ 1] << 16) | ($b[  2] << 8) | $b[ 3]
+                , ($b[ 4] << 24) | ($b[ 5] << 16) | ($b[6] << 8) | $b[ 7]);
 }
 function b2int64_B($b){
 	return new o_u64(
-           ($b[ 4] << 24) | ($b[ 5] << 16) | ($b[6] << 8) | ($b[ 7]<<0)
-                ,     ($b[0] << 24) | ($b[ 1] << 16) | ($b[  2] << 8) | ($b[ 3]<<0) );
+           ($b[ 4] << 24) | ($b[ 5] << 16) | ($b[6] << 8) | ($b[ 7])
+                ,     ($b[0] << 24) | ($b[ 1] << 16) | ($b[  2] << 8) | ($b[ 3]) );
 }
 
 function b2int64_($b){
 	return new o_u64(
                 ($b[0] << 0) | ($b[ 1] << 8) | ($b[  2] <<16) | $b[ 3]<<24
-                , ($b[ 4] <<0) | ($b[ 5] << 8) | ($b[6] << 16) | $b[ 7]<<24);
+                , ($b[ 4] ) | ($b[ 5] << 8) | ($b[6] << 16) | $b[ 7]<<24);
 }
 function b32toint($x,$offset=0){
-	 return ($x[$offset+0]<<0 |$x[$offset+1]<<8 |$x[$offset+2]<<16 |$x[$offset+3]<<24);
+	 return ($x[$offset+0] |$x[$offset+1]<<8 |$x[$offset+2]<<16 |$x[$offset+3]<<24);
 }
 
 

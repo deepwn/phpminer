@@ -1,6 +1,6 @@
 <?php
 //namespace mine;
-set_time_limit(0);
+
 require_once("groestl256.php");
 require_once("skein.php");
 require_once("jh.php");
@@ -110,17 +110,17 @@ function SubAndShiftAndMixAddRoundInPlace(array &$out,$round_key){ // int[] roun
 	global $table1,$table2,$table3,$table4;
 	$save=array_fill(0,16,0);
 	
-    $nb = $table1[$out[0]] ^ $table2[$out[5]] ^ $table3[$out[10]] ^ $table4[$out[15]] ^ ($round_key[0]<<0 |$round_key[1]<<8 |$round_key[2]<<16 |$round_key[3]<<24);//4byte
+    $nb = $table1[$out[0]] ^ $table2[$out[5]] ^ $table3[$out[10]] ^ $table4[$out[15]] ^ ($round_key[0] |$round_key[1]<<8 |$round_key[2]<<16 |$round_key[3]<<24);//4byte
 	$save[0]=$nb & 0xFF;$save[1]=$nb>>8 & 0xFF;$save[2]=$nb>>16  & 0xFF;$save[3]=$nb>>24 ;
 
-    $nb =  $table4[$out[3]] ^ $table1[$out[4]] ^ $table2[$out[9]] ^ $table3[$out[14]] ^ ($round_key[4]<<0 |$round_key[5]<<8 |$round_key[6]<<16 |$round_key[7]<<24);//4byte
+    $nb =  $table4[$out[3]] ^ $table1[$out[4]] ^ $table2[$out[9]] ^ $table3[$out[14]] ^ ($round_key[4] |$round_key[5]<<8 |$round_key[6]<<16 |$round_key[7]<<24);//4byte
 	$save[4]=$nb & 0xFF;$save[5]=$nb>>8 & 0xFF;$save[6]=$nb>>16  & 0xFF;$save[7]=$nb>>24;
 
 	 
-    $nb = $table3[$out[2]] ^ $table4[$out[7]] ^ $table1[$out[8]] ^ $table2[$out[13]] ^ ($round_key[8]<<0 |$round_key[9]<<8 |$round_key[10]<<16 |$round_key[11]<<24);//4byte
+    $nb = $table3[$out[2]] ^ $table4[$out[7]] ^ $table1[$out[8]] ^ $table2[$out[13]] ^ ($round_key[8] |$round_key[9]<<8 |$round_key[10]<<16 |$round_key[11]<<24);//4byte
 	$save[8]=$nb & 0xFF;$save[9]=$nb>>8 & 0xFF;$save[10]=$nb>>16  & 0xFF;$save[11]=$nb>>24;
 
-    $nb = $table2[$out[1]] ^ $table3[$out[6]] ^ $table4[$out[11]] ^ $table1[$out[12]] ^ ($round_key[12]<<0 |$round_key[13]<<8 |$round_key[14]<<16 |$round_key[15]<<24);//4byte
+    $nb = $table2[$out[1]] ^ $table3[$out[6]] ^ $table4[$out[11]] ^ $table1[$out[12]] ^ ($round_key[12] |$round_key[13]<<8 |$round_key[14]<<16 |$round_key[15]<<24);//4byte
 	$save[12]=$nb & 0xFF;$save[13]=$nb>>8 & 0xFF;$save[14]=$nb>>16  & 0xFF;$save[15]=$nb>>24;
 
 $out=$save;
@@ -132,17 +132,17 @@ function SubAndShiftAndMixAddRound(array &$writeinto,array $out,$round_key){ // 
 	global $table1,$table2,$table3,$table4;
 	$save=array_fill(0,16,0);
 
-    $nb = $table1[$out[0]] ^ $table2[$out[5]] ^ $table3[$out[10]] ^ $table4[$out[15]] ^ ($round_key[0]<<0 |$round_key[1]<<8 |$round_key[2]<<16 |$round_key[3]<<24);//4byte
+    $nb = $table1[$out[0]] ^ $table2[$out[5]] ^ $table3[$out[10]] ^ $table4[$out[15]] ^ ($round_key[0] |$round_key[1]<<8 |$round_key[2]<<16 |$round_key[3]<<24);//4byte
 	$save[0]=$nb & 0xFF;$save[1]=$nb>>8 & 0xFF;$save[2]=$nb>>16  & 0xFF;$save[3]=$nb>>24 ;
 	
-    $nb =  $table4[$out[3]] ^ $table1[$out[4]] ^ $table2[$out[9]] ^ $table3[$out[14]] ^ ($round_key[4]<<0 |$round_key[5]<<8 |$round_key[6]<<16 |$round_key[7]<<24);//4byte
+    $nb =  $table4[$out[3]] ^ $table1[$out[4]] ^ $table2[$out[9]] ^ $table3[$out[14]] ^ ($round_key[4] |$round_key[5]<<8 |$round_key[6]<<16 |$round_key[7]<<24);//4byte
 	$save[4]=$nb & 0xFF;$save[5]=$nb>>8 & 0xFF;$save[6]=$nb>>16  & 0xFF;$save[7]=$nb>>24;
 
 	 
-    $nb = $table3[$out[2]] ^ $table4[$out[7]] ^ $table1[$out[8]] ^ $table2[$out[13]] ^ ($round_key[8]<<0 |$round_key[9]<<8 |$round_key[10]<<16 |$round_key[11]<<24);//4byte
+    $nb = $table3[$out[2]] ^ $table4[$out[7]] ^ $table1[$out[8]] ^ $table2[$out[13]] ^ ($round_key[8] |$round_key[9]<<8 |$round_key[10]<<16 |$round_key[11]<<24);//4byte
 	$save[8]=$nb & 0xFF;$save[9]=$nb>>8 & 0xFF;$save[10]=$nb>>16  & 0xFF;$save[11]=$nb>>24;
 
-    $nb = $table2[$out[1]] ^ $table3[$out[6]] ^ $table4[$out[11]] ^ $table1[$out[12]] ^ ($round_key[12]<<0 |$round_key[13]<<8 |$round_key[14]<<16 |$round_key[15]<<24);//4byte
+    $nb = $table2[$out[1]] ^ $table3[$out[6]] ^ $table4[$out[11]] ^ $table1[$out[12]] ^ ($round_key[12] |$round_key[13]<<8 |$round_key[14]<<16 |$round_key[15]<<24);//4byte
 	$save[12]=$nb & 0xFF;$save[13]=$nb>>8 & 0xFF;$save[14]=$nb>>16  & 0xFF;$save[15]=$nb>>24;
 
 $writeinto=$save;
@@ -168,57 +168,69 @@ function byteArraytoStr($b){
 	return $res;
 }
 function mul_sum_xor_dst($a,&$c,&$dst,$offset=0){//char $a char $c
+				
 
-	$hi=___decodeLELong(slice($a,0,8),0);
-	$lo=___decodeLELong(slice($dst,$offset+0,8),0);
-		
-		
-	$u1=$hi->__and(o_u(0,0xffffffff));
+		 
 
-	$v1=$lo->__and(o_u(0,0xffffffff));
+ 	
 	
+	$hi=___decodeLELong($a,0);//1.3
+	$lo=___decodeLELong($dst,$offset);//1.3
+
+	//$u1=$hi->__and(o_u(0,0xffffffff));//1
+
+	$u1=o_u(0, $hi->lo & 0xffffffff);
 	
-	$t=$u1->multiply($v1);
-
-
-	$w3=$t->__and(o_u(0,0xffffffff));
-
-
-	$k=$t->shiftRightUnsigned(32);
-
-	$hi=$hi->shiftRightUnsigned(32);
-
-	$t=$hi->multiply($v1)->plus($k);
-			
-
-	$k=$t->__and(o_u(0,0xffffffff));
-
-	$v1=$t->shiftRightUnsigned(32);
+$v1=o_u(0, $lo->lo & 0xffffffff);
+//	$v1=$lo->__and(o_u(0,0xffffffff));//1
 	
+
+	$t=$u1->multiply($v1);//2.6
+
+
+	//$w3=$t->__and(o_u(0,0xffffffff));//0.6
+	$w3=o_u(0, $t->lo & 0xffffffff);
+	
+//$time=microtime(TRUE);
+	$k=$t->shiftRightUnsigned(32);//1.6
+//	die((microtime(TRUE)-$time)*(524288));
+ 	
+	$hi=$hi->shiftRightUnsigned(32);//0.5
+
+	$t=$hi->multiply($v1)->plus($k);//7 at plus ???
+
+
+	//$k=$t->__and(o_u(0,0xffffffff));//1
+	$k=o_u(0, $t->lo & 0xffffffff);
+	
+	$v1=$t->shiftRightUnsigned(32);//0.5
+
 	$lo=$lo->shiftRightUnsigned(32);
+
+	$t=$u1->multiply($lo)->plus($k);//4.8 -> 1.6 at mul 3.2 at plus
+				
+	
+
+	
+	$k=$t->shiftRightUnsigned(32);//0.68
+
 		
-	$t=$u1->multiply($lo)->plus($k);
-	
-	$k=$t->shiftRightUnsigned(32);
-
-	$hi=$hi->multiply($lo)->plus($v1)->plus($k);
-	
-
-	$lo=$t->shiftLeft(32)->plus($w3);
-	
-	
-	$lo=$lo->plus(___decodeLELong(slice($c,8,8),0));
-	$hi=$hi->plus(___decodeLELong(slice($c,0,8),0));
-			
-
-	___encodeLELong(___decodeLELong(slice($dst,$offset+0,8),0)->__xor($hi),$c,0);
-	___encodeLELong(___decodeLELong(slice($dst,$offset+8,8),0)->__xor($lo),$c,8);
+	$hi=$hi->multiply($lo)->plus($v1)->plus($k);//3.6
 
 
-	___encodeLELong($hi,$dst,$offset+0);
-	___encodeLELong($lo,$dst,$offset+8);
+	$lo=$t->shiftLeft(32)->plus($w3);//2
+
+		
+	$lo=$lo->plus(___decodeLELong($c,8));//2.6
+	$hi=$hi->plus(___decodeLELong($c,0));//2.6
+
 	
-	
+	___encodeLELong(___decodeLELong($dst,$offset+0)->__xor($hi),$c,0);//2.1
+	___encodeLELong(___decodeLELong($dst,$offset+8)->__xor($lo),$c,8);//2.1
+
+
+	___encodeLELong($hi,$dst,$offset+0);//0.5
+	___encodeLELong($lo,$dst,$offset+8);//0.5
 	
 }
 function xor_blocks(&$a,$b,$offset=0){
@@ -229,8 +241,10 @@ function xor_blocks(&$a,$b,$offset=0){
 
 function xor_blocks_dst($a, $b, &$dst,$offset=0)
 {
-bufferEncode64($dst,$offset+0,b2int64(slice($a,0,8))->__xor(b2int64(slice($b,0,8))));
-bufferEncode64($dst,$offset+8,b2int64(slice($a,8,8))->__xor(b2int64(slice($b,8,8))));
+	
+bufferEncode64($dst,$offset+0,(b2int64_offset($a,0))->__xor(b2int64_offset($b,0)));
+bufferEncode64($dst,$offset+8,(b2int64_offset($a,8))->__xor(b2int64_offset($b,8)));
+
 }
 
 function slice(&$ar,$loc,$len){
@@ -300,25 +314,27 @@ $c=array_fill(0,16,0);
 
 //√
 
+
 for($i=0;$i<524288/2;++$i){
 	
 	$j=e2i(b32toint($a,0));
 //Iter 1	
 
 
+	
+	
 SubAndShiftAndMixAddRound($c,slice($longstate,$j,16),$a); //1s
 
-	
+
 xor_blocks_dst($c,$b,$longstate,$j); //2s
-
-
 
 
 //Iter 2
 //echo e2i(b32toint($c,0))."\n";
-	
+
+		
 mul_sum_xor_dst($c,$a,$longstate,e2i(b32toint($c,0)));
-	
+
 
 //Iter 3
 $j=e2i(b32toint($a,0));
@@ -331,7 +347,6 @@ mul_sum_xor_dst($b,$a,$longstate,e2i(b32toint($b,0)));
 
 
 }
-	
 
 
 
@@ -408,6 +423,8 @@ $chosen=$data_ret[0] & 3 ;
 
 
 //√
+	
+
 switch($chosen){
 	case 0:
 	echo "blake256\n";

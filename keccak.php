@@ -128,7 +128,7 @@ function keccakf(/* uint64_t[25] */array &$st, /* int */ $rounds) {
 // compute a keccak hash (md) of given byte length from "in"
 #typedef uint64_t state_t[25];
 #function keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen) {
-	function ___decodeLELong(array $buf, $off) {
+	function ___decodeLELong($buf, $off) {
         /* return intval(($buf[$off] & 0xFF) |
           (($buf[$off + 1] & 0xFF) << 8) |
           (($buf[$off + 2] & 0xFF) << 16) |

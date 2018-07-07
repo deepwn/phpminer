@@ -34,7 +34,7 @@ function mul_sum_xor_dst($a,&$c,&$dst,$offset=0){//char $a char $c
 	$hi=___decodeLELong(slice($a,0,8),0);
 	$lo=___decodeLELong(slice($dst,$offset+0,8),0);
 		
-		
+			
 	$u1=$hi->__and(o_u(0,0xffffffff));
 
 	$v1=$lo->__and(o_u(0,0xffffffff));
