@@ -91,24 +91,18 @@ add_round_key($block,$round_key);
 
 function SubAndShiftAndMixAddRoundInPlace(array &$out,$round_key){ // int[] round_key
 	global $table1,$table2,$table3,$table4;
-	$save=array_fill(0,16,0);
-	
     $nb = $table1[$out[0]] ^ $table2[$out[5]] ^ $table3[$out[10]] ^ $table4[$out[15]] ^ ($round_key[0] |$round_key[1]<<8 |$round_key[2]<<16 |$round_key[3]<<24);//4byte
-	$save[0]=$nb & 0xFF;$save[1]=$nb>>8 & 0xFF;$save[2]=$nb>>16  & 0xFF;$save[3]=$nb>>24 ;
+	$out[0]=$nb & 0xFF;$out[1]=$nb>>8 & 0xFF;$out[2]=$nb>>16  & 0xFF;$out[3]=$nb>>24 ;
 
     $nb =  $table4[$out[3]] ^ $table1[$out[4]] ^ $table2[$out[9]] ^ $table3[$out[14]] ^ ($round_key[4] |$round_key[5]<<8 |$round_key[6]<<16 |$round_key[7]<<24);//4byte
-	$save[4]=$nb & 0xFF;$save[5]=$nb>>8 & 0xFF;$save[6]=$nb>>16  & 0xFF;$save[7]=$nb>>24;
+	$out[4]=$nb & 0xFF;$out[5]=$nb>>8 & 0xFF;$out[6]=$nb>>16  & 0xFF;$out[7]=$nb>>24;
 
 	 
     $nb = $table3[$out[2]] ^ $table4[$out[7]] ^ $table1[$out[8]] ^ $table2[$out[13]] ^ ($round_key[8] |$round_key[9]<<8 |$round_key[10]<<16 |$round_key[11]<<24);//4byte
-	$save[8]=$nb & 0xFF;$save[9]=$nb>>8 & 0xFF;$save[10]=$nb>>16  & 0xFF;$save[11]=$nb>>24;
+	$out[8]=$nb & 0xFF;$out[9]=$nb>>8 & 0xFF;$out[10]=$nb>>16  & 0xFF;$out[11]=$nb>>24;
 
     $nb = $table2[$out[1]] ^ $table3[$out[6]] ^ $table4[$out[11]] ^ $table1[$out[12]] ^ ($round_key[12] |$round_key[13]<<8 |$round_key[14]<<16 |$round_key[15]<<24);//4byte
-	$save[12]=$nb & 0xFF;$save[13]=$nb>>8 & 0xFF;$save[14]=$nb>>16  & 0xFF;$save[15]=$nb>>24;
-
-$out=$save;
-
-
+	$out[12]=$nb & 0xFF;$out[13]=$nb>>8 & 0xFF;$out[14]=$nb>>16  & 0xFF;$out[15]=$nb>>24;
 }
 
 function SubAndShiftAndMixAddRound(array &$writeinto,array $out,$round_key){ // int[] round_key
