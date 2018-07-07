@@ -1,7 +1,6 @@
 <?php
 //namespace mine;
-set_memory_limit(0);
-
+set_time_limit(0);
 require_once("groestl256.php");
 require_once("skein.php");
 require_once("jh.php");
@@ -169,58 +168,55 @@ function byteArraytoStr($b){
 	return $res;
 }
 function mul_sum_xor_dst($a,&$c,&$dst,$offset=0){//char $a char $c
-	$hi=b2int64_(slice($a,0,8));
-	$lo=b2int64_(slice($dst,$offset+0,8));
-	
-	$u1=$hi->__and(o_u(0xffffffff,0));
 
-	$v1=$lo->__and(o_u(0xffffffff,0));
-	$t=$u1->Flip()->multiply($v1->Flip())->Flip();
-
-	$w3=$t->__and(o_u(0xffffffff,0));
-	$k=$t->shiftLeft(32);
-
-	$hi=$hi->shiftLeft(32);
-
-		
-	$t=$hi->Flip()->multiply($v1->Flip())->plus($k->Flip())->Flip();
-		
-	$k=$t->__and(o_u(0xffffffff,0));
-
-	$v1=$t->shiftLeft(32);
-	
-	$lo=$lo->shiftLeft(32);
-		
-	$t=$u1->Flip()->multiply($lo->Flip())->plus($k->Flip())->Flip();
-	
-	$k=$t->shiftLeft(32);
-
-	$hi=$hi->Flip()->multiply($lo->Flip())->plus($v1->Flip())->plus($k->Flip())->Flip();
-	
-	
-	$lo=$t->shiftRightUnsigned(32)->plus($w3);
-	
-	
-	$lo=$lo->Flip()->plus(b2int64_(slice($c,8,8))->Flip())->Flip();
-	$hi=$hi->Flip()->plus(b2int64_(slice($c,0,8))->Flip())->Flip();
+	$hi=___decodeLELong(slice($a,0,8),0);
+	$lo=___decodeLELong(slice($dst,$offset+0,8),0);
 		
 		
-/*		$tmp=array_fill(0,8,0);
+	$u1=$hi->__and(o_u(0,0xffffffff));
 
-	bufferEncode64($tmp,0,$lo);
+	$v1=$lo->__and(o_u(0,0xffffffff));
+	
+	
+	$t=$u1->multiply($v1);
 
-		print_r($tmp);*/
-	bufferEncode64_($c,0,b2int64_(slice($dst,$offset+0,8))->__xor($hi));
-	bufferEncode64_($c,8,b2int64_(slice($dst,$offset+8,8))->__xor($lo));
+
+	$w3=$t->__and(o_u(0,0xffffffff));
+
+
+	$k=$t->shiftRightUnsigned(32);
+
+	$hi=$hi->shiftRightUnsigned(32);
+
+	$t=$hi->multiply($v1)->plus($k);
+			
+
+	$k=$t->__and(o_u(0,0xffffffff));
+
+	$v1=$t->shiftRightUnsigned(32);
+	
+	$lo=$lo->shiftRightUnsigned(32);
+		
+	$t=$u1->multiply($lo)->plus($k);
+	
+	$k=$t->shiftRightUnsigned(32);
+
+	$hi=$hi->multiply($lo)->plus($v1)->plus($k);
 	
 
-/*if($hi->hi & 0xFF  >255){
-		print_r($hi );
-		exit();
-		
-}*/
-	bufferEncode64_($dst,$offset+0,$hi);
-	bufferEncode64_($dst,$offset+8,$lo);
+	$lo=$t->shiftLeft(32)->plus($w3);
+	
+	
+	$lo=$lo->plus(___decodeLELong(slice($c,8,8),0));
+	$hi=$hi->plus(___decodeLELong(slice($c,0,8),0));
+			
+
+	___encodeLELong(___decodeLELong(slice($dst,$offset+0,8),0)->__xor($hi),$c,0);
+	___encodeLELong(___decodeLELong(slice($dst,$offset+8,8),0)->__xor($lo),$c,8);
+
+
+	___encodeLELong($hi,$dst,$offset+0);
+	___encodeLELong($lo,$dst,$offset+8);
 	
 	
 	
@@ -230,25 +226,30 @@ function xor_blocks(&$a,$b,$offset=0){
 	bufferEncode64($a,$offset+8,b2int64(slice($a,$offset+8,8))->setxorOne(b2int64(slice($b,8,8))));
 }
 
+
 function xor_blocks_dst($a, $b, &$dst,$offset=0)
 {
 bufferEncode64($dst,$offset+0,b2int64(slice($a,0,8))->__xor(b2int64(slice($b,0,8))));
 bufferEncode64($dst,$offset+8,b2int64(slice($a,8,8))->__xor(b2int64(slice($b,8,8))));
 }
+
 function slice(&$ar,$loc,$len){
 	$new=array_fill(0,$len,0);
 	for($i=0;$i<$len;$i++)
 	$new[$i]=$ar[$loc+$i];
 return $new;
 }
+//cryptonight([]);
 
 function cryptonight($in){
+
 	$len=32;
 		
 	$data=keccak_($in);//√
 	//$cache= array_fill(0, 2097152, 0);
 
 	$first32=slice($data,0,32);
+
 	$aes=new oaes_ctx();
 	oaes_key_import_data($aes,$first32,$len);
 	$blocks=[];
@@ -259,11 +260,16 @@ function cryptonight($in){
 
 	for($i=0;$i<8;$i++)
 		$blocks[$i]=slice($data,64+$i*16,16);
-	while(true);
+
+
 	// $$block=$first32;
 	//$text=[];//8
-$longstate=array_fill(0,2097152,0);
-//$time=microtime(TRUE);
+//$longstate=array_fill(0,2097152,0);//60MB memory usage, god damn this!!
+//echo((memory_get_usage()/1024)."KB \n");
+
+$longstate=new splFixedArray(2097152);//Thanks to god,we have this;
+
+
 	for($i=0;$i<2097152;$i+=128){//2MB
 	
 	for($j=0;$j<10;$j++){
@@ -285,12 +291,9 @@ $longstate=array_fill(0,2097152,0);
 
 	//print_r (" $i \r\n");
 	}
-	
+
 	//√
 	
-/*	$tm=(microtime(TRUE)-$time);
-	echo "$tm\n".count($longstate);		
-	*/
 $ab=xor_(slice($data,0,32),slice($data,32,32));
 $a=slice($ab,0,16);$b=slice($ab,16,16);
 $c=array_fill(0,16,0);
@@ -302,17 +305,20 @@ for($i=0;$i<524288/2;++$i){
 	$j=e2i(b32toint($a,0));
 //Iter 1	
 
+
 SubAndShiftAndMixAddRound($c,slice($longstate,$j,16),$a); //1s
 
+	
 xor_blocks_dst($c,$b,$longstate,$j); //2s
+
 
 
 
 //Iter 2
 //echo e2i(b32toint($c,0))."\n";
-
+	
 mul_sum_xor_dst($c,$a,$longstate,e2i(b32toint($c,0)));
-
+	
 
 //Iter 3
 $j=e2i(b32toint($a,0));
@@ -390,6 +396,7 @@ for($i=0;$i<25;$i++){
 
 	keccakf($bks,24);
 $data_ret=array_fill(0,200,0);
+
 for($i=0;$i<25;$i++)
 	___encodeLELong($bks[$i],$data_ret,$i*8);
 		
@@ -415,7 +422,7 @@ switch($chosen){
 	echo "skein\n";
 	$ret=skein($data_ret);break;
 }
-
+//	die((memory_get_usage()/1024)."KB \n");
 
 return $ret;
 

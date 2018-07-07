@@ -231,7 +231,7 @@ function F8(state $state) {
   to array 'arr1' starting at index 'off1'
  */
 
-function _memcpy(array &$arr1, $off1, $arr2, $off2, $len) {
+function _memcpy( &$arr1, $off1, $arr2, $off2, $len) {
     for ($i = 0; $i < $len; $i++) {
         $arr1[$off1 + $i] = $arr2[$off2 + $i];
     }

@@ -569,7 +569,44 @@ function xORTable(&$d, $s1, $s2, $len) {
         $i++;
     }
 }
+function strReplace(&$buffer,$rm,$offset,$len){
+	$left=substr($buffer,0,$offset);
+	$right=substr($buffer,$offset+$len,strlen($buffer));
+	
+}
 
+
+function bufferEncode64_str(&$buffer, $offset, $uint64) {
+
+	$ret="";
+    $ret.= chr($uint64->hi >> 24 & 0xFF);
+    $ret.= chr($uint64->hi >> 16 & 0xFF);
+    $ret.= chr($uint64->hi >> 8 & 0xFF);
+    $ret.= chr($uint64->hi & 0xFF);
+    $ret.= chr($uint64->lo >> 24 & 0xFF);
+    $ret.= chr($uint64->lo >> 16 & 0xFF);
+    $ret.= chr($uint64->lo >> 8 & 0xFF);
+    $ret.= chr($uint64->lo & 0xFF);
+strReplace($buffer,$ret,$offset,8);
+
+
+echo "$tm\n";		
+	
+	exit();
+}
+function bufferEncode64_str_(&$buffer, $offset, $uint64) {
+	$ret="";
+    $ret.= chr($uint64->hi >> 0 & 0xFF);
+    $ret.= chr($uint64->hi >> 8 & 0xFF);
+    $ret.= chr($uint64->hi >> 16 & 0xFF);
+    $ret.= chr($uint64->hi >>24 & 0xFF);
+    $ret.= chr($uint64->lo >> 0 & 0xFF);
+    $ret.= chr($uint64->lo >> 8 & 0xFF);
+    $ret.= chr($uint64->lo >> 16 & 0xFF);
+    $ret.= chr($uint64->lo >> 24 & 0xFF);
+	//$buffer=strReplace($buffer,$ret,$offset,8);
+	
+}
 function bufferEncode64(&$buffer, $offset, $uint64) {
     $buffer[$offset] = $uint64->hi >> 24 & 0xFF;
     $buffer[$offset + 1] = $uint64->hi >> 16 & 0xFF;
@@ -579,6 +616,20 @@ function bufferEncode64(&$buffer, $offset, $uint64) {
     $buffer[$offset + 5] = $uint64->lo >> 16 & 0xFF;
     $buffer[$offset + 6] = $uint64->lo >> 8 & 0xFF;
     $buffer[$offset + 7] = $uint64->lo & 0xFF;
+}
+
+function getBuffer64_B( $offset, $uint64) {
+	$buffer=array_fill(0,8,0);
+    $buffer[$offset] = $uint64->lo >> 0 & 0xFF;
+    $buffer[$offset + 1] = $uint64->lo >> 8 & 0xFF;
+    $buffer[$offset + 2] = $uint64->lo >> 16 & 0xFF;
+    $buffer[$offset + 3] = $uint64->lo>> 24 & 0xFF;
+	
+    $buffer[$offset + 4] = $uint64->hi >> 0 & 0xFF;
+    $buffer[$offset + 5] = $uint64->hi >> 8 & 0xFF;
+    $buffer[$offset + 6] = $uint64->hi >> 16 & 0xFF;
+    $buffer[$offset + 7] = $uint64->hi >> 24 & 0xFF;
+	return $buffer;
 }
 
 function bufferEncode64_(&$buffer, $offset, $uint64) {
@@ -596,6 +647,12 @@ function b2int64($b){
                 ($b[0] << 24) | ($b[ 1] << 16) | ($b[  2] << 8) | $b[ 3]<<0
                 , ($b[ 4] << 24) | ($b[ 5] << 16) | ($b[6] << 8) | $b[ 7]<<0);
 }
+function b2int64_B($b){
+	return new o_u64(
+           ($b[ 4] << 24) | ($b[ 5] << 16) | ($b[6] << 8) | ($b[ 7]<<0)
+                ,     ($b[0] << 24) | ($b[ 1] << 16) | ($b[  2] << 8) | ($b[ 3]<<0) );
+}
+
 function b2int64_($b){
 	return new o_u64(
                 ($b[0] << 0) | ($b[ 1] << 8) | ($b[  2] <<16) | $b[ 3]<<24

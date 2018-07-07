@@ -150,7 +150,7 @@ function keccakf(/* uint64_t[25] */array &$st, /* int */ $rounds) {
 
         return new o_u64($h, $l);
     }
-	 function ___encodeLELong(o_u64 $val, array &$buf, $off) {
+	 function ___encodeLELong(o_u64 $val,  &$buf, $off) {
         /* $buf[$off + 0] = BYTE(SHR($val, 0));
           $buf[$off + 1] = BYTE(SHR($val, 8));
           $buf[$off + 2] = BYTE(SHR($val, 16));
@@ -169,6 +169,7 @@ function keccakf(/* uint64_t[25] */array &$st, /* int */ $rounds) {
         $buf[$off + 6] = (($val->hi >> 16) & 0xff);
         $buf[$off + 7] = (($val->hi >> 24) & 0xff);
     }
+
 	
 		 function ___encodeBELong(o_u64 $val, array &$buf, $off) {
         /* $buf[$off + 0] = BYTE(SHR($val, 0));
@@ -183,6 +184,7 @@ function keccakf(/* uint64_t[25] */array &$st, /* int */ $rounds) {
         $buf[$off + 1] = (($val->hi >> 8) & 0xff);
         $buf[$off + 2] = (($val->hi >> 16) & 0xff);
         $buf[$off + 3] = (($val->hi >> 24) & 0xff);
+		
         $buf[$off + 4] = (($val->lo >> 0) & 0xff);
         $buf[$off + 5] = (($val->lo >> 8) & 0xff);
         $buf[$off + 6] = (($val->lo >> 16) & 0xff);
