@@ -1,14 +1,11 @@
 <?php
 
-
 function SHR($x, $c) {
-
     $nmaxBits = PHP_INT_SIZE * 8;
     $c %= $nmaxBits;
-    if ($c)
+
         return (int)$x >> $c & ~ (-1 << $nmaxBits - $c);
-    else
-        return (int)$x;
+
 }
 
 final class o_u64 {
@@ -36,12 +33,12 @@ final class o_u64 {
         //var lowest, lowMid, highMid, highest; //four parts of the whole 64 bit number..
         //need to add the respective parts from each number and the carry if on is present..
 
-	 $lowest = (($this_l & 0XFFFF) + ($o_l & 0XFFFF));
+	 $lowest = (($this_l & 0XFFFF) + ($o_l & 0XFFFF))& 0xffffffff;
 
 		
-        $lowMid = (SHR($this_l, 16) + SHR($o_l, 16) + SHR($lowest, 16));
-        $highMid = ($this_h & 0XFFFF) + ($o_h & 0XFFFF) + SHR($lowMid, 16);
-        $highest = SHR($this_h, 16) + SHR($o_h, 16) + SHR($highMid, 16);
+        $lowMid = (SHR($this_l, 16) + SHR($o_l, 16) + SHR($lowest, 16)) & 0xffffffff;
+        $highMid = ($this_h & 0XFFFF) + ($o_h & 0XFFFF) + SHR($lowMid, 16) & 0xffffffff;
+        $highest = SHR($this_h, 16) + SHR($o_h, 16) + SHR($highMid, 16) ;
 
         //now set the hgih and the low accordingly..
         $this->lo = (($lowMid << 16) | ($lowest & 0XFFFF));
@@ -60,6 +57,7 @@ final class o_u64 {
     }
 
     function plus(o_u64 $oWord) {
+		
         $c = new o_u64(0, 0);
 //  var lowest, lowMid, highMid, highest; //four parts of the whole 64 bit number..
         //need to add the respective parts from each number and the carry if on is present..
@@ -130,12 +128,12 @@ final class o_u64 {
 
     function multiply(o_u64 $multiplier) {
         #throw new Exception('No plz');
-        if ($this->isZero())
-            return $this->zero();
+        //if ($this->isZero())
+         //   return $this->zero();
         #if (!isLong(multiplier))
         #  multiplier = fromNumber(multiplier);
-        if ($multiplier->isZero())
-            return $this->zero();
+      //  if ($multiplier->isZero())
+           // return $this->zero();
 
         // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
         // We can skip products that would overflow.

@@ -444,7 +444,7 @@ return  Hasher::doHash($algo, InputDataSupplier::forByteArray($data_ret))->byteA
   return array_map('ord', str_split(hex2bin($blob)));
     }
 	
-die(bin2hex(byteArraytoStr(cryptonight(hex2Bytes("0707a6dc83da05fe4d4fb4910ad5bd171f48ad67561c47b68ab2b4bcd43c26e14306b624f9dd21d24b00007b988c3a0c411265a75d8edf12c39f70a1f4cb3d5663d097c18e09a265bf4afe01")))));
+//die(bin2hex(byteArraytoStr(cryptonight([]))));
 
 
 
